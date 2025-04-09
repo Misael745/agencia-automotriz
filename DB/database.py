@@ -3,7 +3,7 @@ from mysql.connector import Error
 
 class DatabaseConnection:
     _instance = None
-
+    #se utiliza el principio singleton para la conexion a la base de  creando una instancia de la clase
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
