@@ -5,13 +5,21 @@ class ServicioController:
     def __init__(self):
         self.db = DB()
 
-    def agregar_servicio(self, id_vehiculo, fecha_ingreso, descripcion, estatus="En espera"):
+    def agregar_servicio(self, id_vehiculo, descripcion, refacciones):
         try:
             cursor = self.db.get_cursor()
-            sql = "INSERT INTO servicios (id_vehiculo, fecha_ingreso, descripcion, estatus) VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, (id_vehiculo, fecha_ingreso, descripcion, estatus))
+            sql_servicio = "INSERT INTO servicios (id_vehiculo, descripcion, estatus) VALUES (%s, %s, 'En espera')"
+            cursor.execute(sql_servicio, (id_vehiculo, descripcion))
+            servicio_id = cursor.lastrowid
+
+            for ref_id, nombre, cantidad in refacciones:
+                for _ in range(cantidad):  # Realizar la cantidad de inserciones especificada
+                    cursor.execute("INSERT INTO servicio_refaccion (id_servicio, id_refaccion, cantidad) VALUES (%s, %s, 1)", (servicio_id, ref_id))
+
             self.db.conn.commit()
+            print("✅ Servicio y refacciones agregados correctamente.")
         except Exception as e:
+            self.db.conn.rollback()
             print(f"❌ Error al agregar servicio: {e}")
 
     def obtener_servicios(self):
@@ -25,19 +33,12 @@ class ServicioController:
             print(f"❌ Error al obtener servicios: {e}")
         return servicios
 
-    def actualizar_servicio(self, id_servicio, estatus):
+    def obtener_refacciones_servicio(self, id_servicio):
+        refacciones = []
         try:
             cursor = self.db.get_cursor()
-            sql = "UPDATE servicios SET estatus = %s WHERE id_servicio = %s"
-            cursor.execute(sql, (estatus, id_servicio))
-            self.db.conn.commit()
+            cursor.execute("SELECT r.nombre, COUNT(sr.id_refaccion) AS cantidad, r.precio_unitario FROM servicio_refaccion sr JOIN refacciones r ON sr.id_refaccion = r.id_refaccion WHERE sr.id_servicio = %s GROUP BY r.nombre, r.precio_unitario", (id_servicio,))
+            refacciones = cursor.fetchall()
         except Exception as e:
-            print(f"❌ Error al actualizar servicio: {e}")
-
-    def eliminar_servicio(self, id_servicio):
-        try:
-            cursor = self.db.get_cursor()
-            cursor.execute("DELETE FROM servicios WHERE id_servicio = %s", (id_servicio,))
-            self.db.conn.commit()
-        except Exception as e:
-            print(f"❌ Error al eliminar servicio: {e}")
+            print(f"❌ Error al obtener refacciones del servicio: {e}")
+        return refacciones

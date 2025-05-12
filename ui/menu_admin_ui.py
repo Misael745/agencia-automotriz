@@ -1,10 +1,14 @@
 import tkinter as tk
-from ui.empleado_ui import EmpleadoUI
+from tkinter import messagebox, ttk
+from controllers.vehiculo_controller import VehiculoController
+from ui.vehiculo_ui import VehiculoUI
+from ui.refaccion_ui import RefaccionUI
 from ui.servicio_ui import ServicioUI
+from ui.empleado_ui import EmpleadoUI
 from ui.cliente_ui import ClienteUI
 from ui.marca_ui import MarcaUI
 from ui.modelo_ui import ModeloUI
-from DB.database import DB
+from ui.comprobante_ui import ComprobanteUI
 
 class MenuAdminUI:
     def __init__(self, root):
@@ -24,12 +28,14 @@ class MenuAdminUI:
         crud_menu.add_command(label="Gestión Clientes", command=self.mostrar_clientes)
         crud_menu.add_command(label="Gestión Marcas", command=self.mostrar_marcas)
         crud_menu.add_command(label="Gestión Modelos", command=self.mostrar_modelos)
-        self.menu_bar.add_cascade(label="Administración", menu=crud_menu)
+        crud_menu.add_command(label="Gestión Vehículos", command=self.mostrar_vehiculos)
+        crud_menu.add_command(label="Gestión Refacciones", command=self.mostrar_refacciones)
+        crud_menu.add_command(label="Ver Comprobantes", command=self.mostrar_comprobantes)
 
+        self.menu_bar.add_cascade(label="Administración", menu=crud_menu)
         self.menu_bar.add_command(label="Cerrar sesión", command=self.cerrar_sesion)
 
         self.vista_actual = None
-        self.mostrar_empleados()
 
     def limpiar_vista(self):
         if self.vista_actual:
@@ -54,17 +60,20 @@ class MenuAdminUI:
     def mostrar_modelos(self):
         self.limpiar_vista()
         self.vista_actual = ModeloUI(self.frame_container)
-        self.vista_actual.pack(fill=tk.BOTH, expand=True)
 
+    def mostrar_vehiculos(self):
+        self.limpiar_vista()
+        self.vista_actual = VehiculoUI(self.frame_container)
+
+    def mostrar_refacciones(self):
+        self.limpiar_vista()
+        self.vista_actual = RefaccionUI(self.frame_container)
+
+    def mostrar_comprobantes(self):
+        self.limpiar_vista()
+        self.vista_actual = ComprobanteUI(self.frame_container)
 
 
     def cerrar_sesion(self):
         self.root.destroy()
-        DB().close()
 
-        import tkinter as tk
-        from ui.login_ui import LoginUI
-
-        login_root = tk.Tk()
-        LoginUI(login_root)
-        login_root.mainloop()

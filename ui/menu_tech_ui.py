@@ -1,5 +1,6 @@
 import tkinter as tk
 from ui.servicio_ui import ServicioUI
+from ui.comprobante_ui import ComprobanteUI
 from DB.database import DB
 
 class MenuTechUI:
@@ -15,6 +16,7 @@ class MenuTechUI:
         self.root.config(menu=self.menu_bar)
 
         self.menu_bar.add_command(label="Gestión Servicios", command=self.mostrar_servicios)
+        self.menu_bar.add_command(label="Ver Comprobantes", command=self.mostrar_comprobantes)
         self.menu_bar.add_command(label="Cerrar sesión", command=self.cerrar_sesion)
 
         self.vista_actual = None
@@ -27,6 +29,10 @@ class MenuTechUI:
     def mostrar_servicios(self):
         self.limpiar_vista()
         self.vista_actual = ServicioUI(self.frame_container)
+
+    def mostrar_comprobantes(self):
+        self.limpiar_vista()
+        self.vista_actual = ComprobanteUI(self.frame_container)
 
     def cerrar_sesion(self):
         self.root.destroy()
