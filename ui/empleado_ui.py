@@ -1,7 +1,7 @@
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from controllers.empleado_controller import EmpleadoController
+from models.empleado_factory import EmpleadoFactory
 
 class EmpleadoUI:
     def __init__(self, root):
@@ -43,13 +43,11 @@ class EmpleadoUI:
         # Botones
         tk.Button(self.form_frame, text="Agregar", command=self.agregar_empleado).grid(row=5, column=0)
         tk.Button(self.form_frame, text="Actualizar", command=self.actualizar_empleado).grid(row=5, column=1)
+        tk.Button(self.form_frame, text="Eliminar", command=self.eliminar_empleado).grid(row=5, column=2)
 
-        # Lista de empleados
         self.lista_empleados = tk.Listbox(self.frame, width=50)
         self.lista_empleados.pack()
         self.lista_empleados.bind("<<ListboxSelect>>", self.seleccionar_empleado)
-
-        tk.Button(self.frame, text="Eliminar", command=self.eliminar_empleado).pack()
 
         self.cargar_empleados()
 
@@ -58,17 +56,6 @@ class EmpleadoUI:
         empleados = self.controller.obtener_empleados()
         for emp in empleados:
             self.lista_empleados.insert(tk.END, f"{emp.id_empleado} - {emp}")
-
-    def agregar_empleado(self):
-        self.controller.agregar_empleado(
-            self.nombre_var.get(),
-            self.apellido_var.get(),
-            self.usuario_var.get(),
-            self.contraseña_var.get(),
-            self.rol_var.get()
-        )
-        self.limpiar_formulario()
-        self.cargar_empleados()
 
     def seleccionar_empleado(self, event):
         try:
@@ -86,28 +73,56 @@ class EmpleadoUI:
         except IndexError:
             pass
 
+    def agregar_empleado(self):
+        empleado = EmpleadoFactory.crear_empleado(
+            self.rol_var.get(),
+            self.nombre_var.get(),
+            self.apellido_var.get(),
+            self.usuario_var.get(),
+            self.contraseña_var.get()
+        )
+        self.controller.agregar_empleado(
+            empleado.nombre, empleado.apellido, empleado.usuario, empleado.contraseña, empleado.rol
+        )
+        self.limpiar_formulario()
+        self.cargar_empleados()
+
     def actualizar_empleado(self):
-        if self.selected_id:
-            self.controller.actualizar_empleado(
-                self.selected_id,
-                self.nombre_var.get(),
-                self.apellido_var.get(),
-                self.usuario_var.get(),
-                self.contraseña_var.get(),
-                self.rol_var.get()
-            )
-            self.limpiar_formulario()
-            self.cargar_empleados()
-            self.selected_id = None
+        if self.selected_id is None:
+            messagebox.showwarning("Selección", "Selecciona un empleado para actualizar.")
+            return
+
+        empleado = EmpleadoFactory.crear_empleado(
+            self.rol_var.get(),
+            self.nombre_var.get(),
+            self.apellido_var.get(),
+            self.usuario_var.get(),
+            self.contraseña_var.get()
+        )
+        empleado.id_empleado = self.selected_id
+
+        self.controller.actualizar_empleado(
+            empleado.id_empleado,
+            empleado.nombre,
+            empleado.apellido,
+            empleado.usuario,
+            empleado.contraseña,
+            empleado.rol
+        )
+
+        self.limpiar_formulario()
+        self.cargar_empleados()
 
     def eliminar_empleado(self):
-        if self.selected_id:
-            confirmar = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar este empleado?")
-            if confirmar:
-                self.controller.eliminar_empleado(self.selected_id)
-                self.limpiar_formulario()
-                self.cargar_empleados()
-                self.selected_id = None
+        if self.selected_id is None:
+            messagebox.showwarning("Selección", "Selecciona un empleado para eliminar.")
+            return
+
+        confirmar = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar este empleado?")
+        if confirmar:
+            self.controller.eliminar_empleado(self.selected_id)
+            self.limpiar_formulario()
+            self.cargar_empleados()
 
     def limpiar_formulario(self):
         self.nombre_var.set("")
@@ -115,6 +130,7 @@ class EmpleadoUI:
         self.usuario_var.set("")
         self.contraseña_var.set("")
         self.rol_var.set("")
+        self.selected_id = None
 
     def destroy(self):
         self.frame.destroy()

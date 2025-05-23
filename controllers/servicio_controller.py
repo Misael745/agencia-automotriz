@@ -1,3 +1,4 @@
+
 from DB.database import DB
 from models.servicio import Servicio
 
@@ -12,9 +13,11 @@ class ServicioController:
             cursor.execute(sql_servicio, (id_vehiculo, descripcion))
             servicio_id = cursor.lastrowid
 
-            for ref_id, nombre, cantidad in refacciones:
-                for _ in range(cantidad):  # Realizar la cantidad de inserciones especificada
-                    cursor.execute("INSERT INTO servicio_refaccion (id_servicio, id_refaccion, cantidad) VALUES (%s, %s, 1)", (servicio_id, ref_id))
+            for ref_id, _, cantidad in refacciones:
+                cursor.execute(
+                    "INSERT INTO servicio_refaccion (id_servicio, id_refaccion, cantidad) VALUES (%s, %s, %s)",
+                    (servicio_id, ref_id, cantidad)
+                )
 
             self.db.conn.commit()
             print("✅ Servicio y refacciones agregados correctamente.")
@@ -37,7 +40,10 @@ class ServicioController:
         refacciones = []
         try:
             cursor = self.db.get_cursor()
-            cursor.execute("SELECT r.nombre, COUNT(sr.id_refaccion) AS cantidad, r.precio_unitario FROM servicio_refaccion sr JOIN refacciones r ON sr.id_refaccion = r.id_refaccion WHERE sr.id_servicio = %s GROUP BY r.nombre, r.precio_unitario", (id_servicio,))
+            cursor.execute("""SELECT r.nombre, sr.cantidad, r.precio_unitario
+                              FROM servicio_refaccion sr
+                              JOIN refacciones r ON sr.id_refaccion = r.id_refaccion
+                              WHERE sr.id_servicio = %s""", (id_servicio,))
             refacciones = cursor.fetchall()
         except Exception as e:
             print(f"❌ Error al obtener refacciones del servicio: {e}")

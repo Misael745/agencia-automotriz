@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 from controllers.vehiculo_controller import VehiculoController
@@ -14,10 +15,8 @@ class VehiculoUI:
         self.frame = tk.Frame(self.root)
         self.frame.pack(fill="both", expand=True)
 
-        # Título
         tk.Label(self.frame, text="Gestión de Vehículos", font=("Arial", 16)).grid(row=0, column=0, columnspan=3, pady=10)
 
-        # Entradas
         tk.Label(self.frame, text="Modelo:").grid(row=1, column=0)
         self.combo_modelo = ttk.Combobox(self.frame, state="readonly")
         self.combo_modelo.grid(row=1, column=1)
@@ -34,18 +33,16 @@ class VehiculoUI:
         self.entry_placa = tk.Entry(self.frame)
         self.entry_placa.grid(row=4, column=1)
 
-        # Botones
         tk.Button(self.frame, text="Agregar", command=self.agregar_vehiculo).grid(row=5, column=0)
         tk.Button(self.frame, text="Actualizar", command=self.actualizar_vehiculo).grid(row=5, column=1)
         tk.Button(self.frame, text="Eliminar", command=self.eliminar_vehiculo).grid(row=5, column=2)
+        tk.Button(self.frame, text="Limpiar", command=self.limpiar_formulario).grid(row=5, column=3)
 
-        # Tabla
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Modelo", "Cliente", "Año", "Placa"), show="headings")
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=100)
-        self.tree.grid(row=6, column=0, columnspan=3)
-
+        self.tree.grid(row=6, column=0, columnspan=4)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_vehiculo)
 
         self.cargar_modelos_clientes()
@@ -53,10 +50,12 @@ class VehiculoUI:
 
     def cargar_modelos_clientes(self):
         modelos = self.modelo_controller.obtener_modelos()
-        self.combo_modelo["values"] = [f"{m.id_modelo} - {m.nombre_modelo}" for m in modelos]
+        self.modelos_dict = {m.nombre_modelo: m.id_modelo for m in modelos}
+        self.combo_modelo["values"] = list(self.modelos_dict.keys())
 
         clientes = self.cliente_controller.obtener_clientes()
-        self.combo_cliente["values"] = [f"{c.id_cliente} - {c.nombre}" for c in clientes]
+        self.clientes_dict = {c[1]: c[0] for c in clientes}
+        self.combo_cliente["values"] = list(self.clientes_dict.keys())
 
     def cargar_vehiculos(self):
         self.tree.delete(*self.tree.get_children())
@@ -64,34 +63,53 @@ class VehiculoUI:
         for v in vehiculos:
             self.tree.insert("", "end", values=(v.id_vehiculo, v.modelo, v.cliente, v.anio, v.placa))
 
+    def placa_existente(self, placa):
+        for item in self.tree.get_children():
+            valores = self.tree.item(item)["values"]
+            if valores[4].strip().lower() == placa.strip().lower():
+                return True
+        return False
+
     def agregar_vehiculo(self):
-        modelo = self.combo_modelo.get().split(" - ")[0]
-        cliente = self.combo_cliente.get().split(" - ")[0]
+        if not self.campos_validos():
+            return
+
+        modelo_id = self.modelos_dict.get(self.combo_modelo.get())
+        cliente_id = self.clientes_dict.get(self.combo_cliente.get())
         anio = self.entry_anio.get()
         placa = self.entry_placa.get()
 
-        self.controller.agregar_vehiculo(modelo, cliente, anio, placa)
+        if self.placa_existente(placa):
+            messagebox.showwarning("Duplicado", "Ya existe un vehículo con esa placa.")
+            return
+
+        self.controller.agregar_vehiculo(modelo_id, cliente_id, anio, placa)
         self.cargar_vehiculos()
+        self.limpiar_formulario()
 
     def actualizar_vehiculo(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("Error", "Debes seleccionar un vehículo")
+            messagebox.showwarning("Error", "Selecciona un vehículo para actualizar.")
             return
 
+        if not self.campos_validos():
+            return
+
+        modelo_id = self.modelos_dict.get(self.combo_modelo.get())
+        cliente_id = self.clientes_dict.get(self.combo_cliente.get())
         vehiculo_id = self.tree.item(selected[0])['values'][0]
-        modelo = self.combo_modelo.get().split(" - ")[0]
-        cliente = self.combo_cliente.get().split(" - ")[0]
         anio = self.entry_anio.get()
         placa = self.entry_placa.get()
 
-        self.controller.actualizar_vehiculo(vehiculo_id, modelo, cliente, anio, placa)
+        self.controller.actualizar_vehiculo(vehiculo_id, modelo_id, cliente_id, anio, placa)
         self.cargar_vehiculos()
+        self.limpiar_formulario()
 
     def eliminar_vehiculo(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("Error", "Debes seleccionar un vehículo")
+            messagebox.showwarning("Error", "Selecciona un vehículo para eliminar.")
             return
 
         vehiculo_id = self.tree.item(selected[0])['values'][0]
@@ -99,6 +117,41 @@ class VehiculoUI:
         if confirmar:
             self.controller.eliminar_vehiculo(vehiculo_id)
             self.cargar_vehiculos()
- 
+            self.limpiar_formulario()
+
+    def seleccionar_vehiculo(self, event):
+        selected = self.tree.selection()
+        if selected:
+            values = self.tree.item(selected[0])["values"]
+            self.combo_modelo.set(values[1])
+            self.combo_cliente.set(values[2])
+            self.entry_anio.delete(0, tk.END)
+            self.entry_anio.insert(0, values[3])
+            self.entry_placa.delete(0, tk.END)
+            self.entry_placa.insert(0, values[4])
+
+    def limpiar_formulario(self):
+        self.combo_modelo.set("")
+        self.combo_cliente.set("")
+        self.entry_anio.delete(0, tk.END)
+        self.entry_placa.delete(0, tk.END)
+        self.tree.selection_remove(self.tree.selection())
+
+    def campos_validos(self):
+        modelo = self.combo_modelo.get()
+        cliente = self.combo_cliente.get()
+        anio = self.entry_anio.get()
+        placa = self.entry_placa.get()
+
+        if not modelo or not cliente or not anio or not placa:
+            messagebox.showwarning("Validación", "Todos los campos son obligatorios.")
+            return False
+
+        if not anio.isdigit() or len(anio) != 4:
+            messagebox.showwarning("Validación", "El año debe ser un número de 4 dígitos.")
+            return False
+
+        return True
+
     def destroy(self):
         self.frame.destroy()

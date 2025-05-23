@@ -8,7 +8,7 @@ class EmpleadoController:
     def agregar_empleado(self, nombre, apellido, usuario, contraseña, rol):
         try:
             cursor = self.db.get_cursor()
-            sql = "INSERT INTO empleados (nombre, apellido, usuario, contraseña, rol) VALUES (%s, %s, %s, PASSWORD(%s), %s)"
+            sql = "INSERT INTO empleados (nombre, apellido, usuario, contraseña, rol) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(sql, (nombre, apellido, usuario, contraseña, rol))
             self.db.conn.commit()
         except Exception as e:
@@ -38,7 +38,7 @@ class EmpleadoController:
         try:
             cursor = self.db.get_cursor()
             sql = """
-            UPDATE empleados SET nombre=%s, apellido=%s, usuario=%s, contraseña=PASSWORD(%s), rol=%s 
+            UPDATE empleados SET nombre=%s, apellido=%s, usuario=%s, contraseña=%s, rol=%s 
             WHERE id_empleado=%s
             """
             cursor.execute(sql, (nombre, apellido, usuario, contraseña, rol, id_empleado))
@@ -49,7 +49,7 @@ class EmpleadoController:
     def validar_contraseña(self, usuario, contraseña):
         try:
             cursor = self.db.get_cursor()
-            sql = "SELECT * FROM empleados WHERE usuario = %s AND contraseña = PASSWORD(%s)"
+            sql = "SELECT * FROM empleados WHERE usuario = %s AND contraseña = SHA2(%s, 256)"
             cursor.execute(sql, (usuario, contraseña))
             return cursor.fetchone() is not None
         except Exception as e:
