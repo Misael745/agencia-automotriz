@@ -1,46 +1,50 @@
-import tkinter as tk
+
+from tkinter import *
 from ui.servicio_ui import ServicioUI
 from ui.comprobante_ui import ComprobanteUI
-from DB.database import DB
+from ui.inicio_ui import InicioUI
 
 class MenuTechUI:
-    def __init__(self, root):
+    def __init__(self, root, empleado_actual):
         self.root = root
-        self.root.title("Menú Técnico")
-        self.root.geometry("900x600")
+        self.empleado_actual = empleado_actual
 
-        self.frame_container = tk.Frame(self.root)
-        self.frame_container.pack(fill=tk.BOTH, expand=True)
+        self.frame_container = Frame(self.root)
+        self.frame_container.pack(fill="both", expand=True)
 
-        self.menu_bar = tk.Menu(self.root)
-        self.root.config(menu=self.menu_bar)
+        menu_bar = Menu(self.root)
 
-        self.menu_bar.add_command(label="Gestión Servicios", command=self.mostrar_servicios)
-        self.menu_bar.add_command(label="Ver Comprobantes", command=self.mostrar_comprobantes)
-        self.menu_bar.add_command(label="Cerrar sesión", command=self.cerrar_sesion)
+        # CRUD Menu
+        crud_menu = Menu(menu_bar, tearoff=0)
+        crud_menu.add_command(label="Servicios", command=self.mostrar_servicios)
+        crud_menu.add_command(label="Comprobantes", command=self.mostrar_comprobantes)
+        menu_bar.add_cascade(label="CRUD", menu=crud_menu)
+
+        # Opciones Menu (Inicio, Cerrar Sesión)
+        opciones_menu = Menu(menu_bar, tearoff=0)
+        opciones_menu.add_command(label="Inicio", command=self.mostrar_inicio)
+        opciones_menu.add_command(label="Cerrar Sesión", command=self.cerrar_sesion)
+        menu_bar.add_cascade(label="Opciones", menu=opciones_menu)
+
+        self.root.config(menu=menu_bar)
 
         self.vista_actual = None
-        self.mostrar_servicios()
+        self.mostrar_inicio()
 
-    def limpiar_vista(self):
+    def mostrar_inicio(self):
         if self.vista_actual:
             self.vista_actual.destroy()
+        self.vista_actual = InicioUI(self.frame_container, self.empleado_actual)
 
     def mostrar_servicios(self):
-        self.limpiar_vista()
+        if self.vista_actual:
+            self.vista_actual.destroy()
         self.vista_actual = ServicioUI(self.frame_container)
 
     def mostrar_comprobantes(self):
-        self.limpiar_vista()
+        if self.vista_actual:
+            self.vista_actual.destroy()
         self.vista_actual = ComprobanteUI(self.frame_container)
 
     def cerrar_sesion(self):
         self.root.destroy()
-        DB().close()
-
-        import tkinter as tk
-        from ui.login_ui import LoginUI
-
-        login_root = tk.Tk()
-        LoginUI(login_root)
-        login_root.mainloop()

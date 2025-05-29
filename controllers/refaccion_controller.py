@@ -3,17 +3,23 @@ from models.refaccion import Refaccion
 
 class RefaccionController:
     def __init__(self):
-        self.db = DB().get_cursor()
+        self.db = DB()
+
 
     def obtener_refacciones(self):
-        refacciones = []
-        try:
-            self.db.execute("SELECT * FROM refacciones")
-            for row in self.db.fetchall():
-                refacciones.append(Refaccion(id_refaccion=row[0], nombre=row[1], descripcion=row[2], precio_unitario=row[3], cantidad=row[4]))
-        except Exception as e:
-            print(f"❌ Error al obtener refacciones: {e}")
-        return refacciones
+            refacciones = []
+            try:
+                cursor = self.db.get_cursor()
+                if cursor is None:
+                    print("❌ Error: no se pudo obtener cursor (la base de datos no está conectada).")
+                    return []
+                cursor.execute("SELECT id_refaccion, nombre, descripcion, cantidad, precio_unitario FROM refacciones")
+                for row in cursor.fetchall():
+                    refacciones.append(Refaccion(*row))
+            except Exception as e:
+                print(f"❌ Error al obtener refacciones: {e}")
+            return refacciones
+
 
     def obtener_cantidad_disponible(self, ref_id):
         try:
@@ -50,3 +56,24 @@ class RefaccionController:
             print("🗑️ Refacción eliminada correctamente.")
         except Exception as e:
             print(f"❌ Error al eliminar refacción: {e}")
+
+    def obtener_refaccion_por_id(self, ref_id):
+            try:
+                cursor = self.db.get_cursor()
+                if cursor is None:
+                    print("❌ Error: no se pudo obtener cursor (la base de datos no está conectada).")
+                    return None
+
+                cursor.execute(
+                    "SELECT id_refaccion, nombre, descripcion, cantidad, precio_unitario FROM refacciones WHERE id_refaccion=%s",
+                    (ref_id,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    return Refaccion(*row)
+                else:
+                    return None
+            except Exception as e:
+                print(f"❌ Error al obtener refacción por ID: {e}")
+                return None
+

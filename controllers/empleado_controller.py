@@ -1,5 +1,6 @@
 from DB.database import DB
-from models.empleado import Empleado
+from  models.empleado_factory import EmpleadoFactory
+import hashlib
 
 class EmpleadoController:
     def __init__(self):
@@ -20,7 +21,9 @@ class EmpleadoController:
             cursor = self.db.get_cursor()
             cursor.execute("SELECT id_empleado, nombre, apellido, usuario, contraseña, rol FROM empleados")
             for row in cursor.fetchall():
-                empleado = Empleado(*row)
+                id_empleado, nombre, apellido, usuario, contraseña, rol = row
+                empleado = EmpleadoFactory.crear_empleado(rol, nombre, apellido, usuario, contraseña)
+                empleado.id_empleado = id_empleado
                 empleados.append(empleado)
         except Exception as e:
             print(f"❌ Error al obtener empleados: {e}")
@@ -56,3 +59,22 @@ class EmpleadoController:
             print(f"❌ Error al validar contraseña: {e}")
             return False
 
+    def validar_login(self, usuario, contraseña):
+        try:
+            cursor = self.db.get_cursor()
+            hashed = hashlib.sha256(contraseña.encode()).hexdigest()
+            cursor.execute(
+                "SELECT id_empleado, nombre, apellido, usuario, contraseña, rol FROM empleados WHERE usuario=%s AND contraseña=%s",
+                (usuario, hashed)
+            )
+            row = cursor.fetchone()
+            if row:
+                id_empleado, nombre, apellido, usuario, contraseña_db, rol = row
+                empleado = EmpleadoFactory.crear_empleado(rol, nombre, apellido, usuario, contraseña_db)
+                empleado.id_empleado = id_empleado
+                return empleado
+            else:
+                return None
+        except Exception as e:
+            print(f"❌ Error al validar login: {e}")
+            return None

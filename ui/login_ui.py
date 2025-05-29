@@ -1,57 +1,57 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from controllers.empleado_controller import EmpleadoController
-from ui.menu_admin_ui import MenuAdminUI
-from ui.menu_tech_ui import MenuTechUI
 
 class LoginUI:
-    def __init__(self, root,on_login_success=None):
-
+    def __init__(self, root):
         self.root = root
-        self.root.title("Login de Acceso")
-        self.root.geometry("400x200")
-        self.controller = EmpleadoController()
+        self.root.title("Login - Agencia de Automóviles")
+        self.root.geometry("400x250")
+        self.root.resizable(False, False)
 
-        self.usuario_var = tk.StringVar()
-        self.contraseña_var = tk.StringVar()
-        self.intentos_fallidos = 0
+        # Frame principal con ttk para estilo uniforme
+        frame = ttk.Frame(root, padding=20)
+        frame.pack(expand=True, fill="both")
+        frame.columnconfigure(1, weight=1)
 
-        frame = tk.Frame(root)
-        frame.pack(pady=50)
+        ttk.Label(frame, text="Inicio de Sesión", font=("Arial", 16)).grid(row=0, column=0, columnspan=2, pady=10)
 
-        tk.Label(frame, text="Usuario").grid(row=0, column=0)
-        tk.Entry(frame, textvariable=self.usuario_var).grid(row=0, column=1)
+        ttk.Label(frame, text="Usuario:").grid(row=1, column=0, sticky="w", pady=5, padx=5)
+        self.entry_usuario = ttk.Entry(frame, font=("Arial", 12))
+        self.entry_usuario.grid(row=1, column=1, pady=5, padx=5, sticky="ew")
 
-        tk.Label(frame, text="Contraseña").grid(row=1, column=0)
-        tk.Entry(frame, textvariable=self.contraseña_var, show="*").grid(row=1, column=1)
+        ttk.Label(frame, text="Contraseña:").grid(row=2, column=0, sticky="w", pady=5, padx=5)
+        self.entry_contraseña = ttk.Entry(frame, show="*", font=("Arial", 12))
+        self.entry_contraseña.grid(row=2, column=1, pady=5, padx=5, sticky="ew")
 
-        tk.Button(frame, text="Ingresar", command=self.validar_login).grid(row=2, column=0, columnspan=2, pady=10)
+        boton_login = ttk.Button(frame, text="Iniciar Sesión", command=self.validar_login)
+        boton_login.grid(row=3, column=0, columnspan=2, pady=10)
 
     def validar_login(self):
-        if self.intentos_fallidos >= 5:
-            messagebox.showerror("Acceso bloqueado", "Demasiados intentos fallidos.")
-            self.root.destroy()
+        usuario = self.entry_usuario.get().strip()
+        contraseña = self.entry_contraseña.get().strip()
+
+        if not usuario or not contraseña:
+            messagebox.showwarning("Validación", "Por favor, ingresa usuario y contraseña.")
             return
 
-        usuario = self.usuario_var.get()
-        contraseña = self.contraseña_var.get()
+        controller = EmpleadoController()
+        try:
+            emp = controller.validar_login(usuario, contraseña)
+            if emp:
+                self.mostrar_menu(emp)
+            else:
+                messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al validar el login: {str(e)}")
 
-        for emp in self.controller.obtener_empleados():
-            if emp.usuario == usuario:
-                if self.controller.validar_contraseña(usuario, contraseña):
-                    self.mostrar_menu(emp)
-                    return
-
-        self.intentos_fallidos += 1
-        messagebox.showerror("Error", f"Credenciales inválidas. Intentos restantes: {5 - self.intentos_fallidos}")
-
-    def mostrar_menu(self, empleado):
-        self.root.destroy()
-        if empleado.rol == 'administrador':
-            root = tk.Tk()
-            MenuAdminUI(root)
-            root.mainloop()
-        elif empleado.rol == 'tecnico':
-            root = tk.Tk()
-            MenuTechUI(root)
-            root.mainloop()
+    def mostrar_menu(self, emp):
+        self.root.withdraw()
+        root = tk.Toplevel()
+        empleado_actual = f"{emp.nombre} {emp.apellido}"
+        if emp.rol == 'administrador':
+            from ui.menu_admin_ui import MenuAdminUI
+            MenuAdminUI(root, empleado_actual)
+        else:
+            from ui.menu_tech_ui import MenuTechUI
+            MenuTechUI(root, empleado_actual)

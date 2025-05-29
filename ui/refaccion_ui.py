@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk, messagebox
 from controllers.refaccion_controller import RefaccionController
 
 class RefaccionUI:
@@ -7,63 +7,84 @@ class RefaccionUI:
         self.root = root
         self.controller = RefaccionController()
 
-        self.frame = tk.Frame(self.root)
+        self.frame = ttk.Frame(self.root, padding=15)
         self.frame.pack(fill="both", expand=True)
+        self.frame.columnconfigure(1, weight=1)
 
         # Título
-        tk.Label(self.frame, text="Gestión de Refacciones", font=("Arial", 16)).grid(row=0, column=0, columnspan=3, pady=10)
+        ttk.Label(self.frame, text="Gestión de Refacciones", font=("Arial", 16)).grid(row=0, column=0, columnspan=3, pady=10)
 
         # Entradas
-        tk.Label(self.frame, text="Nombre:").grid(row=1, column=0)
-        self.entry_nombre = tk.Entry(self.frame)
-        self.entry_nombre.grid(row=1, column=1)
-
-        tk.Label(self.frame, text="Descripción:").grid(row=2, column=0)
-        self.entry_descripcion = tk.Entry(self.frame)
-        self.entry_descripcion.grid(row=2, column=1)
-
-        tk.Label(self.frame, text="Precio Unitario:").grid(row=3, column=0)
-        self.entry_precio = tk.Entry(self.frame)
-        self.entry_precio.grid(row=3, column=1)
-
-        tk.Label(self.frame, text="Cantidad Disponible:").grid(row=4, column=0)
-        self.entry_cantidad = tk.Entry(self.frame)
-        self.entry_cantidad.grid(row=4, column=1)
+        self._crear_entrada("Nombre:", 1)
+        self._crear_entrada("Descripción:", 2)
+        self._crear_entrada("Precio Unitario:", 3)
+        self._crear_entrada("Cantidad Disponible:", 4)
 
         # Botones
-        tk.Button(self.frame, text="Agregar", command=self.agregar_refaccion).grid(row=5, column=0)
-        tk.Button(self.frame, text="Actualizar", command=self.actualizar_refaccion).grid(row=5, column=1)
-        tk.Button(self.frame, text="Eliminar", command=self.eliminar_refaccion).grid(row=5, column=2)
+        botones_frame = ttk.Frame(self.frame)
+        botones_frame.grid(row=5, column=0, columnspan=3, pady=10)
+        ttk.Button(botones_frame, text="Agregar", command=self.agregar_refaccion).pack(side="left", padx=5)
+        ttk.Button(botones_frame, text="Actualizar", command=self.actualizar_refaccion).pack(side="left", padx=5)
+        ttk.Button(botones_frame, text="Eliminar", command=self.eliminar_refaccion).pack(side="left", padx=5)
 
         # Tabla
-        self.tree = ttk.Treeview(self.frame, columns=("ID", "Nombre", "Descripción", "Precio", "Cantidad"), show="headings")
+        lista_frame = ttk.LabelFrame(self.frame, text="Refacciones Registradas", padding=10)
+        lista_frame.grid(row=6, column=0, columnspan=3, sticky="nsew", padx=10, pady=5)
+        self.frame.rowconfigure(6, weight=1)
+        self.frame.columnconfigure(0, weight=1)
+
+        self.tree = ttk.Treeview(lista_frame, columns=("ID", "Nombre", "Descripción", "Precio", "Cantidad"), show="headings", height=10)
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
-        self.tree.grid(row=6, column=0, columnspan=3)
-
+            self.tree.column(col, width=120, anchor="center")
+        self.tree.pack(side="left", fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_refaccion)
+
+        scrollbar = ttk.Scrollbar(lista_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+
         self.cargar_refacciones()
+
+    def _crear_entrada(self, texto, fila):
+        ttk.Label(self.frame, text=texto).grid(row=fila, column=0, sticky="w", padx=5, pady=5)
+        entry = ttk.Entry(self.frame, width=30)
+        entry.grid(row=fila, column=1, padx=5, pady=5, sticky="ew")
+        setattr(self, f"entry_{texto.lower().replace(' ', '_').replace(':', '').replace('.', '')}", entry)
 
     def cargar_refacciones(self):
         self.tree.delete(*self.tree.get_children())
-        refacciones = self.controller.obtener_refacciones()
-        for ref in refacciones:
-            self.tree.insert("", "end", values=(ref.id_refaccion, ref.nombre, ref.descripcion, ref.precio_unitario, ref.cantidad))
+        try:
+            refacciones = self.controller.obtener_refacciones()
+            for ref in refacciones:
+                self.tree.insert("", "end", values=(ref.id_refaccion, ref.nombre, ref.descripcion, ref.precio_unitario, ref.cantidad))
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudieron cargar las refacciones: {str(e)}")
 
     def agregar_refaccion(self):
-        nombre = self.entry_nombre.get()
-        descripcion = self.entry_descripcion.get()
+        nombre = self.entry_nombre.get().strip()
+        descripcion = self.entry_descripcion.get().strip()
+        precio = self.entry_precio_unitario.get().strip()
+        cantidad = self.entry_cantidad_disponible.get().strip()
+
+        if not nombre or not descripcion or not precio or not cantidad:
+            messagebox.showwarning("Validación", "Completa todos los campos.")
+            return
+
         try:
-            precio = float(self.entry_precio.get())
-            cantidad = int(self.entry_cantidad.get())
+            precio = float(precio)
+            cantidad = int(cantidad)
         except ValueError:
             messagebox.showerror("Error", "El precio y la cantidad deben ser números.")
             return
 
-        self.controller.agregar_refaccion(nombre, descripcion, precio, cantidad)
-        self.cargar_refacciones()
-        self.limpiar_formulario()
+        try:
+            self.controller.agregar_refaccion(nombre, descripcion, precio, cantidad)
+            self.cargar_refacciones()
+            self.limpiar_formulario()
+            messagebox.showinfo("Éxito", "Refacción agregada correctamente.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo agregar la refacción: {str(e)}")
 
     def actualizar_refaccion(self):
         selected = self.tree.selection()
@@ -72,18 +93,29 @@ class RefaccionUI:
             return
 
         ref_id = self.tree.item(selected[0])['values'][0]
-        nombre = self.entry_nombre.get()
-        descripcion = self.entry_descripcion.get()
+        nombre = self.entry_nombre.get().strip()
+        descripcion = self.entry_descripcion.get().strip()
+        precio = self.entry_precio_unitario.get().strip()
+        cantidad = self.entry_cantidad_disponible.get().strip()
+
+        if not nombre or not descripcion or not precio or not cantidad:
+            messagebox.showwarning("Validación", "Completa todos los campos.")
+            return
+
         try:
-            precio = float(self.entry_precio.get())
-            cantidad = int(self.entry_cantidad.get())
+            precio = float(precio)
+            cantidad = int(cantidad)
         except ValueError:
             messagebox.showerror("Error", "El precio y la cantidad deben ser números.")
             return
 
-        self.controller.actualizar_refaccion(ref_id, nombre, descripcion, precio, cantidad)
-        self.cargar_refacciones()
-        self.limpiar_formulario()
+        try:
+            self.controller.actualizar_refaccion(ref_id, nombre, descripcion, precio, cantidad)
+            self.cargar_refacciones()
+            self.limpiar_formulario()
+            messagebox.showinfo("Éxito", "Refacción actualizada correctamente.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo actualizar la refacción: {str(e)}")
 
     def eliminar_refaccion(self):
         selected = self.tree.selection()
@@ -94,9 +126,13 @@ class RefaccionUI:
         ref_id = self.tree.item(selected[0])['values'][0]
         confirmar = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar esta refacción?")
         if confirmar:
-            self.controller.eliminar_refaccion(ref_id)
-            self.cargar_refacciones()
-            self.limpiar_formulario()
+            try:
+                self.controller.eliminar_refaccion(ref_id)
+                self.cargar_refacciones()
+                self.limpiar_formulario()
+                messagebox.showinfo("Éxito", "Refacción eliminada correctamente.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo eliminar la refacción: {str(e)}")
 
     def seleccionar_refaccion(self, event):
         selected = self.tree.selection()
@@ -106,16 +142,16 @@ class RefaccionUI:
             self.entry_nombre.insert(0, values[1])
             self.entry_descripcion.delete(0, tk.END)
             self.entry_descripcion.insert(0, values[2])
-            self.entry_precio.delete(0, tk.END)
-            self.entry_precio.insert(0, values[3])
-            self.entry_cantidad.delete(0, tk.END)
-            self.entry_cantidad.insert(0, values[4])
+            self.entry_precio_unitario.delete(0, tk.END)
+            self.entry_precio_unitario.insert(0, values[3])
+            self.entry_cantidad_disponible.delete(0, tk.END)
+            self.entry_cantidad_disponible.insert(0, values[4])
 
     def limpiar_formulario(self):
         self.entry_nombre.delete(0, tk.END)
         self.entry_descripcion.delete(0, tk.END)
-        self.entry_precio.delete(0, tk.END)
-        self.entry_cantidad.delete(0, tk.END)
+        self.entry_precio_unitario.delete(0, tk.END)
+        self.entry_cantidad_disponible.delete(0, tk.END)
 
     def destroy(self):
-     self.frame.destroy()
+        self.frame.destroy()

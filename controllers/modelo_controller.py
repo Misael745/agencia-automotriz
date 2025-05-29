@@ -26,7 +26,7 @@ class ModeloController:
                 print("❌ No se pudo obtener el cursor.")
                 return []
 
-            cursor.execute("SELECT id_modelo, id_marca, nombre_modelo FROM modelos")
+            cursor.execute("SELECT id_modelo, id_marca, nombre_modelo FROM modelos group by nombre_modelo")
             modelos = [Modelo(*row) for row in cursor.fetchall()]
             return modelos
         except Exception as e:
