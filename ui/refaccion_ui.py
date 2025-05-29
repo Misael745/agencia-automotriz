@@ -16,7 +16,12 @@ class RefaccionUI:
 
         # Entradas
         self._crear_entrada("Nombre:", 1)
-        self._crear_entrada("Descripción:", 2)
+
+        # Corregido: Descripción explícita
+        ttk.Label(self.frame, text="Descripción:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
+        self.entry_descripcion = ttk.Entry(self.frame, width=30)
+        self.entry_descripcion.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+
         self._crear_entrada("Precio Unitario:", 3)
         self._crear_entrada("Cantidad Disponible:", 4)
 

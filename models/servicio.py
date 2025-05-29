@@ -1,14 +1,13 @@
-from datetime import date
+from DB.database import DB
 
 class Servicio:
-    def __init__(self, id_servicio=None, id_vehiculo=None, fecha_ingreso=None, fecha_proximo_servicio=None, descripcion=None, estatus="En espera"):
+    def __init__(self, id_servicio, id_vehiculo, placa, cliente, descripcion, estatus, fecha_ingreso, fecha_proximo_servicio):
         self.id_servicio = id_servicio
         self.id_vehiculo = id_vehiculo
-        self.fecha_ingreso = fecha_ingreso or date.today()
-        self.fecha_proximo_servicio = fecha_proximo_servicio
+        self.placa = placa
+        self.cliente = cliente
         self.descripcion = descripcion
-        self.estatus = estatus  # 'En espera', 'En proceso', 'Finalizado'
-
-    def __str__(self):
-        return f"🔧 Servicio #{self.id_servicio} | Estado: {self.estatus}"
+        self.estatus = estatus
+        self.fecha_ingreso = fecha_ingreso
+        self.fecha_proximo_servicio = fecha_proximo_servicio
 

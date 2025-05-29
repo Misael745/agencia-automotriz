@@ -1,5 +1,5 @@
-
-from tkinter import *
+from tkinter import ttk, Menu
+import tkinter as tk
 from ui.cliente_ui import ClienteUI
 from ui.empleado_ui import EmpleadoUI
 from ui.marca_ui import MarcaUI
@@ -15,24 +15,28 @@ class MenuAdminUI:
         self.root = root
         self.empleado_actual = empleado_actual
 
-        self.frame_container = Frame(self.root)
+        self.frame_container = ttk.Frame(self.root, padding=10)
         self.frame_container.pack(fill="both", expand=True)
+        self.frame_container.columnconfigure(0, weight=1)
+        self.frame_container.rowconfigure(0, weight=1)
 
         menu_bar = Menu(self.root)
 
-        # CRUD Menu
         crud_menu = Menu(menu_bar, tearoff=0)
-        crud_menu.add_command(label="Clientes", command=self.mostrar_clientes)
-        crud_menu.add_command(label="Empleados", command=self.mostrar_empleados)
-        crud_menu.add_command(label="Marcas", command=self.mostrar_marcas)
-        crud_menu.add_command(label="Modelos", command=self.mostrar_modelos)
-        crud_menu.add_command(label="Vehículos", command=self.mostrar_vehiculos)
-        crud_menu.add_command(label="Refacciones", command=self.mostrar_refacciones)
-        crud_menu.add_command(label="Servicios", command=self.mostrar_servicios)
-        crud_menu.add_command(label="Comprobantes", command=self.mostrar_comprobantes)
+        secciones_crud = [
+            ("Clientes", ClienteUI),
+            ("Empleados", EmpleadoUI),
+            ("Marcas", MarcaUI),
+            ("Modelos", ModeloUI),
+            ("Vehículos", VehiculoUI),
+            ("Refacciones", RefaccionUI),
+            ("Servicios", ServicioUI),
+            ("Comprobantes", ComprobanteUI)
+        ]
+        for nombre, clase_vista in secciones_crud:
+            crud_menu.add_command(label=nombre, command=lambda c=clase_vista: self.mostrar_vista(c))
         menu_bar.add_cascade(label="CRUD", menu=crud_menu)
 
-        # Opciones Menu (Inicio, Cerrar Sesión)
         opciones_menu = Menu(menu_bar, tearoff=0)
         opciones_menu.add_command(label="Inicio", command=self.mostrar_inicio)
         opciones_menu.add_command(label="Cerrar Sesión", command=self.cerrar_sesion)
@@ -43,50 +47,22 @@ class MenuAdminUI:
         self.vista_actual = None
         self.mostrar_inicio()
 
+    def mostrar_vista(self, vista_clase, *args):
+        if self.vista_actual:
+            self.vista_actual.destroy()
+        try:
+            self.vista_actual = vista_clase(self.frame_container, *args)
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Ocurrió un error al cargar {vista_clase.__name__}:\n{e}")
+            print(f"Error en {vista_clase.__name__}: {e}")
+
     def mostrar_inicio(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = InicioUI(self.frame_container, self.empleado_actual)
-
-    def mostrar_clientes(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = ClienteUI(self.frame_container)
-
-    def mostrar_empleados(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = EmpleadoUI(self.frame_container)
-
-    def mostrar_marcas(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = MarcaUI(self.frame_container)
-
-    def mostrar_modelos(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = ModeloUI(self.frame_container)
-
-    def mostrar_vehiculos(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = VehiculoUI(self.frame_container)
-
-    def mostrar_refacciones(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = RefaccionUI(self.frame_container)
-
-    def mostrar_servicios(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = ServicioUI(self.frame_container)
-
-    def mostrar_comprobantes(self):
-        if self.vista_actual:
-            self.vista_actual.destroy()
-        self.vista_actual = ComprobanteUI(self.frame_container)
+        self.mostrar_vista(InicioUI, self.empleado_actual)
 
     def cerrar_sesion(self):
-        self.root.destroy()
+        self.root.destroy()  # Cerrar la ventana actual
+        from ui.login_ui import LoginUI
+        nueva_raiz = tk.Tk()
+        LoginUI(nueva_raiz)
+        nueva_raiz.mainloop()

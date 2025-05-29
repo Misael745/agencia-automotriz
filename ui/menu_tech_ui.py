@@ -1,5 +1,5 @@
-
-from tkinter import *
+import tkinter as tk
+from tkinter import ttk, Menu, messagebox
 from ui.servicio_ui import ServicioUI
 from ui.comprobante_ui import ComprobanteUI
 from ui.inicio_ui import InicioUI
@@ -9,18 +9,20 @@ class MenuTechUI:
         self.root = root
         self.empleado_actual = empleado_actual
 
-        self.frame_container = Frame(self.root)
+        self.frame_container = ttk.Frame(self.root, padding=10)
         self.frame_container.pack(fill="both", expand=True)
+        self.frame_container.columnconfigure(0, weight=1)
+        self.frame_container.rowconfigure(0, weight=1)
 
         menu_bar = Menu(self.root)
 
-        # CRUD Menu
+        # Menú CRUD
         crud_menu = Menu(menu_bar, tearoff=0)
         crud_menu.add_command(label="Servicios", command=self.mostrar_servicios)
         crud_menu.add_command(label="Comprobantes", command=self.mostrar_comprobantes)
-        menu_bar.add_cascade(label="CRUD", menu=crud_menu)
+        menu_bar.add_cascade(label="Gestión", menu=crud_menu)
 
-        # Opciones Menu (Inicio, Cerrar Sesión)
+        # Menú Opciones
         opciones_menu = Menu(menu_bar, tearoff=0)
         opciones_menu.add_command(label="Inicio", command=self.mostrar_inicio)
         opciones_menu.add_command(label="Cerrar Sesión", command=self.cerrar_sesion)
@@ -48,3 +50,7 @@ class MenuTechUI:
 
     def cerrar_sesion(self):
         self.root.destroy()
+        from ui.login_ui import LoginUI
+        nueva_raiz = tk.Tk()
+        LoginUI(nueva_raiz)
+        nueva_raiz.mainloop()

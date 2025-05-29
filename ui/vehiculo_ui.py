@@ -170,10 +170,9 @@ class VehiculoUI:
             return False
 
         placa = self.entry_placa.get().strip().upper()
-        if not re.match(r"^([A-Z]{3}-\d{4}|[A-Z0-9]{3}-\d{3}[A-Z])$", placa):
-            messagebox.showwarning("Validación", "Formato de placa inválido. Use AAA-1234 o 2DF-355V.")
+        if not re.match(r"^[A-Z0-9]{3}-[A-Z0-9]{4}$", placa):
+            messagebox.showwarning("Validación", "Formato de placa inválido. Use formato similar a 2DF-355V.")
             return False
-
         return True
 
     def placa_existente(self, placa):
